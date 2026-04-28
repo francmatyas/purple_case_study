@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Conversion {
+  id                 String   @id @default(cuid())
+  amount             Decimal  @db.Decimal(18, 6)
+  sourceCurrency     String   @map("source_currency")
+  targetCurrency     String   @map("target_currency")
+  exchangeRate       Decimal  @db.Decimal(18, 8) @map("exchange_rate")
+  convertedAmount    Decimal  @db.Decimal(18, 6) @map("converted_amount")
+  convertedAmountUsd Decimal  @db.Decimal(18, 6) @map("converted_amount_usd")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([targetCurrency])
+  @@index([createdAt])
+  @@map("conversions")
+}
+
+model ExchangeRateCache {
+  id           String   @id @default(cuid())
+  baseCurrency String   @map("base_currency")
+  rates        Json
+  fetchedAt    DateTime @map("fetched_at")
+
+  @@unique([baseCurrency])
+  @@map("exchange_rate_cache")
+}
