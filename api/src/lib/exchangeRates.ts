@@ -1,6 +1,6 @@
 import { AppError } from "./errors";
 import { prisma } from "./prisma";
-import type { ExchangeRates } from "@/types/currency";
+import type { ExchangeRates } from "../types/currency";
 
 type OpenExchangeRatesResponse = {
   base: string;
@@ -10,6 +10,7 @@ type OpenExchangeRatesResponse = {
 
 function getCacheTtlMs(): number {
   const ttl = parseInt(process.env.EXCHANGE_RATE_CACHE_TTL_SECONDS ?? "3600", 10);
+  if (!Number.isFinite(ttl) || ttl <= 0) return 3600 * 1000;
   return ttl * 1000;
 }
 
@@ -29,21 +30,18 @@ async function fetchFromProvider(): Promise<ExchangeRates> {
 
   let response: Response;
   try {
-    response = await fetch(url, { next: { revalidate: 0 } });
+    response = await fetch(url);
   } catch {
     throw new AppError("EXCHANGE_RATE_PROVIDER_ERROR", "Unable to fetch exchange rates");
   }
 
   if (!response.ok) {
-    throw new AppError(
-      "EXCHANGE_RATE_PROVIDER_ERROR",
-      "Unable to fetch exchange rates"
-    );
+    throw new AppError("EXCHANGE_RATE_PROVIDER_ERROR", "Unable to fetch exchange rates");
   }
 
   let data: OpenExchangeRatesResponse;
   try {
-    data = await response.json();
+    data = await response.json() as OpenExchangeRatesResponse;
   } catch {
     throw new AppError("EXCHANGE_RATE_PROVIDER_ERROR", "Unable to parse exchange rate response");
   }
@@ -55,7 +53,8 @@ async function fetchFromProvider(): Promise<ExchangeRates> {
   };
 }
 
-export async function getExchangeRates(baseCurrency = "USD"): Promise<ExchangeRates> {
+export async function getExchangeRates(): Promise<ExchangeRates> {
+  const baseCurrency = "USD";
   const cached = await prisma.exchangeRateCache.findUnique({
     where: { baseCurrency },
   });
@@ -91,7 +90,6 @@ export function computeRate(
   sourceCurrency: string,
   targetCurrency: string
 ): number {
-  // Provider base is USD; cross-rate: target/USD ÷ source/USD
   const sourceRate =
     sourceCurrency === rates.baseCurrency ? 1 : rates.rates[sourceCurrency];
   const targetRate =

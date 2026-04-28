@@ -26,12 +26,18 @@ export function toErrorResponse(error: unknown): {
       EXCHANGE_RATE_PROVIDER_ERROR: 502,
       INTERNAL_SERVER_ERROR: 500,
     };
+    const publicMessageMap: Record<AppErrorCode, string> = {
+      VALIDATION_ERROR: "Invalid conversion input",
+      RATE_NOT_AVAILABLE: "Rate not available for requested currency pair",
+      EXCHANGE_RATE_PROVIDER_ERROR: "Unable to fetch exchange rates",
+      INTERNAL_SERVER_ERROR: "An unexpected error occurred",
+    };
+
     return {
       status: statusMap[error.code],
       body: {
         error: error.code,
-        message: error.message,
-        ...(error.details ? { details: error.details } : {}),
+        message: publicMessageMap[error.code],
       },
     };
   }

@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { SUPPORTED_CURRENCIES } from "@/types/currency";
+import { SUPPORTED_CURRENCIES, conversionFormSchema, conversionResultSchema } from "@/types/currency";
+import { getApiErrorMessage, parseJsonSafely } from "@/lib/http";
 import type { ConversionResult } from "@/types/currency";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 type Props = {
   onSuccess: (result: ConversionResult) => void;
@@ -26,40 +29,41 @@ export default function CurrencyConverterForm({ onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormError>({});
 
-  function validate(): FormError {
-    const errs: FormError = {};
-    const num = parseFloat(amount);
-    if (!amount.trim()) errs.amount = "Amount is required";
-    else if (isNaN(num) || !isFinite(num)) errs.amount = "Amount must be a valid number";
-    else if (num <= 0) errs.amount = "Amount must be positive";
-    return errs;
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) {
-      setErrors(errs);
+    const validated = conversionFormSchema.safeParse({
+      amount,
+      sourceCurrency,
+      targetCurrency,
+    });
+    if (!validated.success) {
+      const amountIssue = validated.error.issues.find((issue) => issue.path[0] === "amount");
+      setErrors({ amount: amountIssue?.message ?? "Invalid input" });
       return;
     }
     setErrors({});
     setLoading(true);
     try {
-      const res = await fetch("/api/convert", {
+      const res = await fetch(`${API_URL}/convert`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: parseFloat(amount),
-          sourceCurrency,
-          targetCurrency,
-        }),
+        body: JSON.stringify(validated.data),
       });
-      const data = await res.json();
+      const data = await parseJsonSafely(res);
       if (!res.ok) {
-        setErrors({ api: data.message ?? "Conversion failed. Please try again." });
+        setErrors({
+          api: getApiErrorMessage(res, data, "Conversion failed. Please try again."),
+        });
         return;
       }
-      onSuccess(data as ConversionResult);
+
+      const parsed = conversionResultSchema.safeParse(data);
+      if (!parsed.success) {
+        setErrors({ api: "Unexpected response format from server." });
+        return;
+      }
+
+      onSuccess(parsed.data);
     } catch {
       setErrors({ api: "Network error. Please check your connection." });
     } finally {

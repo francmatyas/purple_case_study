@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { getExchangeRates, computeRate } from "./exchangeRates";
-import type { ConversionResult } from "@/types/currency";
+import type { ConversionResult } from "../types/currency";
 
 // Rounding: exchange rate to 8 dp, amounts to 6 dp
 function round(value: number, decimals: number): number {
@@ -19,7 +19,7 @@ export async function performConversion(
   sourceCurrency: string,
   targetCurrency: string
 ): Promise<ConversionResult> {
-  const rates = await getExchangeRates("USD");
+  const rates = await getExchangeRates();
   const exchangeRate = computeRate(rates, sourceCurrency, targetCurrency);
   const usdRate = computeRate(rates, targetCurrency, "USD");
 

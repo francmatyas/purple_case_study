@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { getApiErrorMessage, parseJsonSafely } from "@/lib/http";
 import CurrencyConverterForm from "@/components/CurrencyConverterForm";
 import ResultCard from "@/components/ResultCard";
 import ConversionStats from "@/components/ConversionStats";
+import { statsResponseSchema } from "@/types/currency";
 import type { ConversionResult, StatsResponse } from "@/types/currency";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+
 type Props = {
-  initialStats: StatsResponse;
+  initialStats: StatsResponse | null;
 };
 
 export default function ConverterPanel({ initialStats }: Props) {
   const [result, setResult] = useState<ConversionResult | null>(null);
-  const [stats, setStats] = useState<StatsResponse>(initialStats);
+  const [stats, setStats] = useState<StatsResponse | null>(initialStats);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState<string | null>(null);
 
@@ -20,9 +24,18 @@ export default function ConverterPanel({ initialStats }: Props) {
     setStatsLoading(true);
     setStatsError(null);
     try {
-      const res = await fetch("/api/stats");
-      if (!res.ok) throw new Error();
-      setStats(await res.json());
+      const res = await fetch(`${API_URL}/stats`);
+      const data = await parseJsonSafely(res);
+      if (!res.ok) {
+        setStatsError(getApiErrorMessage(res, data, "Unable to refresh statistics."));
+        return;
+      }
+      const parsed = statsResponseSchema.safeParse(data);
+      if (!parsed.success) {
+        setStatsError("Statistics response format is invalid.");
+        return;
+      }
+      setStats(parsed.data);
     } catch {
       setStatsError("Unable to refresh statistics.");
     } finally {

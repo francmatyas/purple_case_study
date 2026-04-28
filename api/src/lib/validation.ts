@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SUPPORTED_CURRENCIES } from "@/types/currency";
+import { SUPPORTED_CURRENCIES } from "../types/currency";
 
 export const conversionRequestSchema = z.object({
   amount: z
