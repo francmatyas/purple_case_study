@@ -7,6 +7,13 @@ function round(value: number, decimals: number): number {
   return Number(value.toFixed(decimals));
 }
 
+// Same currency = 1 step; direct from/to base = 2; cross-rate through base = 3
+function countCalculationSteps(source: string, target: string, base: string): number {
+  if (source === target) return 1;
+  if (source === base || target === base) return 2;
+  return 3;
+}
+
 export async function performConversion(
   amount: number,
   sourceCurrency: string,
@@ -20,6 +27,7 @@ export async function performConversion(
   const roundedRate = round(exchangeRate, 8);
   // Store USD equivalent of the converted amount for global stats
   const convertedAmountUsd = round(convertedAmount * usdRate, 6);
+  const calculationSteps = countCalculationSteps(sourceCurrency, targetCurrency, rates.baseCurrency);
 
   const record = await prisma.conversion.create({
     data: {
@@ -39,6 +47,7 @@ export async function performConversion(
     exchangeRate: roundedRate,
     convertedAmount,
     createdAt: record.createdAt.toISOString(),
+    calculationSteps,
   };
 }
 

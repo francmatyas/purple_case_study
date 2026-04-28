@@ -10,15 +10,19 @@ type Props = {
 
 type FormError = {
   amount?: string;
-  sourceCurrency?: string;
-  targetCurrency?: string;
   api?: string;
 };
 
+const inputClass =
+  "w-full rounded-lg bg-white px-4 py-3 text-base text-gray-900 outline-none focus:ring-2 focus:ring-white/60";
+
+const selectClass =
+  "w-full appearance-none rounded-lg bg-white px-4 py-3 pr-10 text-base text-gray-900 outline-none focus:ring-2 focus:ring-white/60";
+
 export default function CurrencyConverterForm({ onSuccess }: Props) {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState("200");
   const [sourceCurrency, setSourceCurrency] = useState("EUR");
-  const [targetCurrency, setTargetCurrency] = useState("USD");
+  const [targetCurrency, setTargetCurrency] = useState("CZK");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormError>({});
 
@@ -26,17 +30,16 @@ export default function CurrencyConverterForm({ onSuccess }: Props) {
     const errs: FormError = {};
     const num = parseFloat(amount);
     if (!amount.trim()) errs.amount = "Amount is required";
-    else if (isNaN(num) || !isFinite(num))
-      errs.amount = "Amount must be a valid number";
+    else if (isNaN(num) || !isFinite(num)) errs.amount = "Amount must be a valid number";
     else if (num <= 0) errs.amount = "Amount must be positive";
     return errs;
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+    const errs = validate();
+    if (Object.keys(errs).length) {
+      setErrors(errs);
       return;
     }
     setErrors({});
@@ -53,9 +56,7 @@ export default function CurrencyConverterForm({ onSuccess }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setErrors({
-          api: data.message ?? "Conversion failed. Please try again.",
-        });
+        setErrors({ api: data.message ?? "Conversion failed. Please try again." });
         return;
       }
       onSuccess(data as ConversionResult);
@@ -67,92 +68,88 @@ export default function CurrencyConverterForm({ onSuccess }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      {/* Amount */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-gray-700">Amount</label>
-        <input
-          type="number"
-          min="0"
-          step="any"
-          placeholder="100"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className={`w-full rounded-xl border px-4 py-3 text-base outline-none transition focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
-            errors.amount
-              ? "border-red-400 bg-red-50"
-              : "border-gray-200 bg-white"
-          }`}
-        />
-        {errors.amount && (
-          <p className="text-xs text-red-500">{errors.amount}</p>
-        )}
-      </div>
-
-      {/* Currency selectors */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">From</label>
-          <div className="relative">
-            <select
-              title="Source Currency"
-              name="sourceCurrency"
-              value={sourceCurrency}
-              onChange={(e) => setSourceCurrency(e.target.value)}
-              className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 pr-10 text-base outline-none transition focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            >
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <ChevronIcon />
+    <form onSubmit={handleSubmit} className="w-full">
+      {/* Purple card */}
+      <div className="w-full rounded-xl bg-purple-900 px-8 py-12">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-4">
+          {/* Amount */}
+          <div>
+            <label htmlFor="amount" className="mb-1.5 block text-sm text-white">
+              Amount to convert
+            </label>
+            <input
+              id="amount"
+              type="number"
+              min="0"
+              step="any"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className={inputClass}
+            />
+            {errors.amount && (
+              <p className="mt-1 text-xs text-red-300">{errors.amount}</p>
+            )}
           </div>
-        </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">To</label>
-          <div className="relative">
-            <select
-              name="targetCurrency"
-              title="Target Currency"
-              value={targetCurrency}
-              onChange={(e) => setTargetCurrency(e.target.value)}
-              className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 pr-10 text-base outline-none transition focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            >
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <ChevronIcon />
+          {/* From */}
+          <div>
+            <label className="mb-1.5 block text-sm text-white">From</label>
+            <div className="relative">
+              <select
+                title="Source currency"
+                value={sourceCurrency}
+                onChange={(e) => setSourceCurrency(e.target.value)}
+                className={selectClass}
+              >
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <ChevronIcon />
+            </div>
+          </div>
+
+          {/* To */}
+          <div>
+            <label className="mb-1.5 block text-sm text-white">To</label>
+            <div className="relative">
+              <select
+                title="Target currency"
+                value={targetCurrency}
+                onChange={(e) => setTargetCurrency(e.target.value)}
+                className={selectClass}
+              >
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <ChevronIcon />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* API error */}
       {errors.api && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {errors.api}
-        </div>
+        <p className="mt-3 text-center text-sm text-red-600">{errors.api}</p>
       )}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-purple-700 py-3.5 text-base font-semibold text-white transition hover:bg-purple-800 active:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {loading ? "Converting…" : "Convert"}
-      </button>
+      {/* Button — outside the card, centered */}
+      <div className="mt-6 flex justify-center">
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded-lg bg-purple-900 px-10 py-3.5 text-base font-medium text-white transition hover:bg-purple-950 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? "Converting…" : "Convert currency"}
+        </button>
+      </div>
     </form>
   );
 }
 
 function ChevronIcon() {
   return (
-    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path
           d="M4 6l4 4 4-4"

@@ -31,6 +31,7 @@ export type ConversionResult = {
   exchangeRate: number;
   convertedAmount: number;
   createdAt: string;
+  calculationSteps: number;
 };
 
 export type StatsResponse = {

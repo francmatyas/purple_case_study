@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import CurrencyConverterForm from "@/components/CurrencyConverterForm";
-import ConversionResult from "@/components/ConversionResult";
+import ResultCard from "@/components/ResultCard";
 import ConversionStats from "@/components/ConversionStats";
-import type { ConversionResult as ConversionResultType, StatsResponse } from "@/types/currency";
+import type { ConversionResult, StatsResponse } from "@/types/currency";
 
 type Props = {
   initialStats: StatsResponse;
 };
 
 export default function ConverterPanel({ initialStats }: Props) {
-  const [result, setResult] = useState<ConversionResultType | null>(null);
+  const [result, setResult] = useState<ConversionResult | null>(null);
   const [stats, setStats] = useState<StatsResponse>(initialStats);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState<string | null>(null);
@@ -30,31 +30,27 @@ export default function ConverterPanel({ initialStats }: Props) {
     }
   }
 
-  function handleConversionSuccess(r: ConversionResultType) {
+  async function handleConversionSuccess(r: ConversionResult) {
     setResult(r);
-    refreshStats();
+    await refreshStats();
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      {/* Converter panel */}
-      <div className="lg:col-span-2">
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-5 text-lg font-semibold text-gray-800">Exchange</h2>
-          <CurrencyConverterForm onSuccess={handleConversionSuccess} />
-          {result && <ConversionResult result={result} />}
-        </div>
-      </div>
+    <div className="mx-auto flex max-w-[700px] flex-col px-5 pt-14 pb-14 sm:items-center sm:pt-20">
+      <h1 className="mb-8 text-3xl font-bold text-gray-900 sm:text-center sm:text-4xl">
+        Purple currency converter
+      </h1>
 
-      {/* Stats panel */}
-      <div className="lg:col-span-1">
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <ConversionStats
-            stats={stats}
-            loading={statsLoading}
-            error={statsError}
-          />
-        </div>
+      <CurrencyConverterForm onSuccess={handleConversionSuccess} />
+
+      {result && <ResultCard result={result} />}
+
+      <div className="mt-10 w-full">
+        <ConversionStats
+          stats={stats}
+          loading={statsLoading}
+          error={statsError}
+        />
       </div>
     </div>
   );

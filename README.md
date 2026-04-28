@@ -51,12 +51,16 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Environment Variables
 
-| Variable                         | Default                                                  | Description                          |
-|----------------------------------|----------------------------------------------------------|--------------------------------------|
-| `DATABASE_URL`                   | `postgresql://postgres:postgres@localhost:5432/currency_converter?schema=public` | PostgreSQL connection string |
-| `EXCHANGE_RATE_API_KEY`          | —                                                        | Open Exchange Rates API key (required) |
-| `EXCHANGE_RATE_API_BASE_URL`     | `https://openexchangerates.org/api`                      | Exchange rate provider base URL      |
-| `EXCHANGE_RATE_CACHE_TTL_SECONDS`| `3600`                                                   | Exchange rate cache TTL in seconds   |
+| Variable                          | Default                              | Description                                          |
+|-----------------------------------|--------------------------------------|------------------------------------------------------|
+| `POSTGRES_HOST`                   | `localhost`                          | PostgreSQL host                                      |
+| `POSTGRES_PORT`                   | `5432`                               | PostgreSQL port (also the Docker host-side port)     |
+| `POSTGRES_USERNAME`               | `postgres`                           | PostgreSQL username                                  |
+| `POSTGRES_PASSWORD`               | `postgres`                           | PostgreSQL password                                  |
+| `DATABASE_URL`                    | _(composed)_                         | Built from `POSTGRES_*` vars via `dotenv-expand`     |
+| `EXCHANGE_RATE_API_KEY`           | —                                    | Open Exchange Rates API key (required)               |
+| `EXCHANGE_RATE_API_BASE_URL`      | `https://openexchangerates.org/api`  | Exchange rate provider base URL                      |
+| `EXCHANGE_RATE_CACHE_TTL_SECONDS` | `3600`                               | Exchange rate cache TTL in seconds                   |
 
 ## Commands
 
@@ -94,14 +98,15 @@ Converts an amount between currencies and persists the record.
   "targetCurrency": "USD",
   "exchangeRate": 1.08742100,
   "convertedAmount": 108.742100,
-  "createdAt": "2026-04-27T12:00:00.000Z"
+  "createdAt": "2026-04-27T12:00:00.000Z",
+  "calculationSteps": 2
 }
 ```
 
 **Error responses:**
-- `400 VALIDATION_ERROR` — invalid or missing input
-- `400 UNSUPPORTED_CURRENCY` — currency not in supported list
-- `400 RATE_NOT_AVAILABLE` — exchange rate unavailable for currency
+
+- `400 VALIDATION_ERROR` — invalid input, missing fields, or unsupported currency
+- `400 RATE_NOT_AVAILABLE` — exchange rate unavailable for a currency
 - `502 EXCHANGE_RATE_PROVIDER_ERROR` — upstream provider unreachable
 - `500 INTERNAL_SERVER_ERROR` — unexpected server error
 

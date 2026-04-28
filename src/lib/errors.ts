@@ -1,6 +1,5 @@
 export type AppErrorCode =
   | "VALIDATION_ERROR"
-  | "UNSUPPORTED_CURRENCY"
   | "RATE_NOT_AVAILABLE"
   | "EXCHANGE_RATE_PROVIDER_ERROR"
   | "INTERNAL_SERVER_ERROR";
@@ -23,7 +22,6 @@ export function toErrorResponse(error: unknown): {
   if (error instanceof AppError) {
     const statusMap: Record<AppErrorCode, number> = {
       VALIDATION_ERROR: 400,
-      UNSUPPORTED_CURRENCY: 400,
       RATE_NOT_AVAILABLE: 400,
       EXCHANGE_RATE_PROVIDER_ERROR: 502,
       INTERNAL_SERVER_ERROR: 500,

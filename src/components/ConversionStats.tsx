@@ -25,7 +25,7 @@ export default function ConversionStats({ stats, loading, error }: Props) {
       )}
 
       {stats && !loading && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <StatCard
             label="Total Conversions"
             value={stats.totalConversions.toLocaleString()}
